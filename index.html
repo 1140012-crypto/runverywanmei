@@ -2,1675 +2,905 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>晴空跑者</title>
-
-<script
-  src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"
-  crossorigin="anonymous">
-</script>
-
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
 <style>
-  * { box-sizing: border-box; }
-
-  body {
-    margin: 0;
-    padding: 28px 20px 40px;
-    min-height: 100vh;
-    background:
-      radial-gradient(ellipse at 15% 0%, #e2f5ee, transparent 55%),
-      #f4f6f0;
-    color: #203a35;
-    font-family: system-ui, "Microsoft JhengHei", sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  h1 {
-    margin: 0;
-    color: #173f35;
-    font-size: clamp(28px, 4vw, 38px);
-  }
-
-  .subtitle {
-    margin: 12px 0 24px;
-    color: #5e756c;
-    text-align: center;
-    line-height: 1.8;
-  }
-
-  .main-container {
-    width: 100%;
-    max-width: 1280px;
-    display: grid;
-    grid-template-columns: minmax(260px, .8fr) minmax(0, 1.5fr);
-    gap: 20px;
-    align-items: start;
-  }
-
-  .card {
-    position: relative;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    padding: 20px;
-    background: #fff;
-    border: 1px solid #dbe5df;
-    border-radius: 22px;
-    box-shadow: 0 14px 40px #173f3510;
-  }
-
-  .canvas-title {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-    color: #244f43;
-    font-weight: bold;
-  }
-
-  #pose-status {
-    font-size: 12px;
-    font-weight: normal;
-    color: #8d701a;
-  }
-
-  canvas {
-    display: block;
-    width: 100%;
-    height: auto;
-    border-radius: 15px;
-    background: #e6eee7;
-  }
-
-  #webcam { display: none; }
-
-  .camera-note {
-    margin: 0;
-    color: #708477;
-    font-size: 12px;
-    line-height: 1.8;
-  }
-
-  .hud-box {
-    flex: 1;
-    min-width: 0;
-    padding: 12px;
-    background: #f1f7f3;
-    border: 1px solid #e0eae3;
-    border-radius: 12px;
-    color: #60786d;
-    font-size: 13px;
-    line-height: 1.9;
-  }
-
-  .hud-title {
-    color: #245e48;
-    font-size: 15px;
-    font-weight: bold;
-  }
-
-  .hud-value {
-    color: #16825e;
-    font-weight: bold;
-  }
-
-  .status-up {
-    color: #c67c13;
-    font-weight: bold;
-  }
-
-  .status-down { color: #84968c; }
-
-  .bottom-info {
-    width: 100%;
-    display: flex;
-    justify-content: space-around;
-    flex-wrap: wrap;
-    gap: 12px;
-    padding: 17px 12px;
-    border-radius: 14px;
-    background: #143f34;
-    color: #d4e6de;
-  }
-
-  #hud-dist { color: #4ade80; font-weight: bold; }
-  #hud-time { color: #7dd3fc; font-weight: bold; }
-
-  .ranking {
-    width: 100%;
-    padding: 12px;
-    background: #f8f5e9;
-    border: 1px solid #e8e1c9;
-    border-radius: 12px;
-  }
-
-  .ranking-title {
-    margin-bottom: 6px;
-    text-align: center;
-    color: #8d701a;
-    font-weight: bold;
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-  }
-
-  th, td {
-    padding: 7px 8px;
-    text-align: center;
-  }
-
-  .player-row { font-weight: bold; }
-
-  .controls {
-    width: 100%;
-    max-width: 1280px;
-    margin-top: 20px;
-    padding: 18px;
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-    background: #fff;
-    border: 1px solid #dbe5df;
-    border-radius: 20px;
-  }
-
-  select {
-    max-width: 100%;
-    padding: 11px;
-    border: 1px solid #dce6dd;
-    border-radius: 10px;
-    background: #f4f7f3;
-    color: #365a4c;
-    font-size: 13px;
-    cursor: pointer;
-  }
-
-  button {
-    padding: 12px 18px;
-    border: 0;
-    border-radius: 10px;
-    background: #167b58;
-    color: #fff;
-    font-size: 14px;
-    font-weight: bold;
-    cursor: pointer;
-  }
-
-  button:hover { filter: brightness(1.08); }
-  button:active { transform: scale(.98); }
-
-  button:focus-visible,
-  select:focus-visible {
-    outline: 3px solid #e8ad39;
-    outline-offset: 3px;
-  }
-
-  .btn-stop { background: #c4473e; }
-  .btn-reset { background: #e9efea; color: #365747; }
-  #fullscreen-btn { background: #285d75; }
-
-  #fullscreen-status {
-    color: #9a542a;
-    font-size: 13px;
-  }
-
-  .modal {
-    position: absolute;
-    inset: 0;
-    z-index: 10;
-    display: none;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 10px;
-    padding: 24px;
-    overflow: auto;
-    background: rgba(15, 48, 39, .97);
-    border-radius: 22px;
-    color: #fff;
-  }
-
-  .modal.show { display: flex; }
-
-  .modal h2 {
-    margin: 0 0 8px;
-    color: #facc15;
-    font-size: 26px;
-  }
-
-  .modal p { margin: 4px 0; }
-
-  .final-counts {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 20px;
-    padding: 12px;
-    background: #ffffff10;
-    border-radius: 10px;
-  }
-
-  #final-ranking {
-    width: 100%;
-    max-width: 360px;
-  }
-
-  #final-ranking th,
-  #final-ranking td {
-    border-bottom: 1px solid #ffffff25;
-  }
-
-  html:fullscreen {
-    overflow: auto;
-    background: #f4f6f0;
-  }
-
-  html:-webkit-full-screen {
-    overflow: auto;
-    background: #f4f6f0;
-  }
-
-  @media (max-width: 850px) {
-    body { padding: 20px 12px; }
-    .main-container { grid-template-columns: 1fr; }
-    .camera-card { order: 2; }
-    .card, .controls { padding: 14px; }
-    .hud-box { font-size: 12px; }
-    .modal { justify-content: flex-start; }
-  }
+*{box-sizing:border-box}
+body{margin:0;padding:28px 18px;background:#f1f6ef;color:#244638;font-family:system-ui,"Microsoft JhengHei",sans-serif}
+h1,p{text-align:center}
+h1{margin:0;font-size:36px}
+.intro{color:#64806e;line-height:1.8}
+.layout{max-width:1280px;margin:auto;display:grid;grid-template-columns:minmax(260px,.8fr) minmax(0,1.5fr);gap:20px}
+.card{position:relative;padding:18px;background:white;border:1px solid #dce7dc;border-radius:22px;min-width:0}
+.heading{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;font-weight:bold}
+#pose-status{font-size:12px;font-weight:normal;color:#9a751a}
+canvas{display:block;width:100%;height:auto;border-radius:14px;background:#e4eee4}
+video{display:none}
+.note{font-size:12px;color:#718574;line-height:1.8;text-align:left}
+.feet{display:flex;gap:12px;margin-top:12px}
+.foot{flex:1;padding:12px;background:#f0f7ef;border-radius:12px;font-size:13px;line-height:1.9}
+.foot strong{display:block;font-size:15px}
+.up{color:#bd7b14;font-weight:bold}
+.down{color:#839287}
+.stats{display:flex;justify-content:space-around;flex-wrap:wrap;gap:10px;margin-top:12px;background:#184b38;color:#e6f4e7;border-radius:12px;padding:16px}
+.stats b{color:#8af2bc}
+.controls{max-width:1280px;margin:20px auto 0;background:#fff;border:1px solid #dce7dc;border-radius:20px;padding:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+button,select{border-radius:10px;padding:11px 14px;font:inherit;font-size:13px;max-width:100%}
+button{background:#187c55;color:white;border:0;cursor:pointer;font-weight:bold}
+button:hover{filter:brightness(1.1)}
+select{background:#f3f7f1;color:#365b45;border:1px solid #d6e3d5}
+.secondary{background:#e7eee5;color:#365b45}
+.stop{background:#b8483f}
+#fullscreen-btn{background:#315f78}
+button:focus-visible,select:focus-visible{outline:3px solid #e9bb46;outline-offset:3px}
+.ranking{margin-top:12px;padding:10px;background:#f9f5e7;border-radius:12px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+td,th{padding:6px;text-align:center}
+.player-row{font-weight:bold}
+.modal{position:absolute;inset:0;z-index:5;display:none;flex-direction:column;justify-content:center;align-items:center;gap:12px;padding:22px;background:#143b2ff5;color:white;border-radius:22px;overflow:auto}
+.modal.show{display:flex}
+.modal h2{color:#f5d565;margin:0}
+.modal p{margin:2px}
+.final-feet{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;padding:14px;background:#ffffff12;border-radius:12px}
+#final-ranking{width:100%;max-width:340px}
+#fullscreen-status{font-size:12px;color:#a36a20}
+[hidden]{display:none!important}
+html:fullscreen{overflow:auto;background:#f1f6ef}
+html:-webkit-full-screen{overflow:auto;background:#f1f6ef}
+@media(max-width:850px){
+  .layout{grid-template-columns:1fr}
+  .camera-card{order:2}
+  body{padding:20px 10px}
+  .card{padding:13px}
+  .modal{justify-content:flex-start}
+}
 </style>
 </head>
-
 <body>
 <h1>晴空跑者</h1>
+<p class="intro" id="instructions">坐著或站著都可以。放下雙腳完成校正後，每抬膝一次前進 0.5 公尺，也可按 A／D 前進。</p>
 
-<p class="subtitle" id="instruction-text">
-  抬腳一次前進 0.5 公尺，也可按 A（左腳）／D（右腳）前進。
-</p>
-
-<div class="main-container">
+<div class="layout">
   <section class="card camera-card">
-    <div class="canvas-title">
+    <div class="heading">
       <span>動作追蹤 · 鏡頭預覽</span>
-      <span id="pose-status" role="status">初始化鏡頭中...</span>
+      <span id="pose-status" role="status">準備鏡頭中...</span>
     </div>
-
     <video id="webcam" playsinline muted></video>
     <canvas id="pose-canvas" width="480" height="360"></canvas>
-
-    <p class="camera-note">
-      請讓髖部與雙膝完整入鏡。校正時先放下雙腳、保持不動。
-      站位改變後，可按「重新校正」。
-    </p>
+    <p class="note">請讓髖部與雙膝入鏡。校正時放下雙腳並保持不動。黃色點代表正在確認，藍色點代表追蹤正常。坐下、站起或換站位後，請按「重新校正」。</p>
   </section>
 
   <section class="card">
-    <div class="canvas-title">
-      SUNNY TRACK ｜ 晴空跑道 · 每格 1 m
-    </div>
-
+    <div class="heading">SUNNY TRACK ｜ 晴空跑道 · 每格 1 m</div>
     <canvas id="game-canvas" width="960" height="540"></canvas>
-
-    <div class="hud-box">
-      <div class="hud-title">左腳</div>
-      <div>抬起次數：<span id="hud-left-count" class="hud-value">0</span></div>
-      <div>抬起狀態：<span id="hud-left-status" class="status-down">平放</span></div>
-    </div>
-
-    <div class="hud-box">
-      <div class="hud-title">右腳</div>
-      <div>抬起次數：<span id="hud-right-count" class="hud-value">0</span></div>
-      <div>抬起狀態：<span id="hud-right-status" class="status-down">平放</span></div>
-    </div>
-
-    <div id="ranking-panel" class="ranking" hidden>
-      <div class="ranking-title">即時名次</div>
-      <table>
-        <tbody id="ranking-body"></tbody>
-      </table>
-    </div>
-
-    <div class="bottom-info">
-      <div>前進距離：<span id="hud-dist">0.00</span> m</div>
-      <div>比賽時間：<span id="hud-time">00:00.0</span></div>
-    </div>
-
-    <div id="win-modal" class="modal">
-      <h2>挑戰結束！</h2>
-      <p>完賽距離：<span id="final-dist">0.00</span> m</p>
-      <p>完賽時間：<span id="final-time">00:00.0</span></p>
-
-      <div class="final-counts">
-        <span>左腳：<span id="final-left-count">0</span> 次</span>
-        <span>右腳：<span id="final-right-count">0</span> 次</span>
+    <div class="feet">
+      <div class="foot">
+        <strong>左腳</strong>抬起次數：<b id="left-count">0</b><br>
+        抬起狀態：<span id="left-status" class="down">平放</span>
       </div>
-
+      <div class="foot">
+        <strong>右腳</strong>抬起次數：<b id="right-count">0</b><br>
+        抬起狀態：<span id="right-status" class="down">平放</span>
+      </div>
+    </div>
+    <div class="stats">
+      <span>前進距離：<b id="distance">0.00</b> m</span>
+      <span>比賽時間：<b id="time">00:00.0</b></span>
+    </div>
+    <div id="ranking-panel" class="ranking" hidden>
+      <div style="text-align:center">即時名次</div>
+      <table><tbody id="ranking-body"></tbody></table>
+    </div>
+    <div id="result" class="modal">
+      <h2>挑戰結束！</h2>
+      <p>完賽距離：<span id="final-distance">0.00</span> m</p>
+      <p>完賽時間：<span id="final-time">00:00.0</span></p>
+      <div class="final-feet">
+        <span>左腳：<b id="final-left">0</b> 次</span>
+        <span>右腳：<b id="final-right">0</b> 次</span>
+      </div>
       <div id="final-ranking" hidden>
-        <p style="text-align:center;color:#facc15">最終對決名次</p>
+        <p>最終名次</p>
         <table>
-          <thead>
-            <tr>
-              <th>名次</th>
-              <th>跑者</th>
-            </tr>
-          </thead>
-          <tbody id="final-ranking-body"></tbody>
+          <thead><tr><th>名次</th><th>跑者</th></tr></thead>
+          <tbody id="final-body"></tbody>
         </table>
       </div>
-
       <button type="button" onclick="resetGame()">再次挑戰</button>
     </div>
   </section>
 </div>
 
 <div class="controls">
-  <select id="camera-select" onchange="switchCamera(this.value)" aria-label="攝影機">
+  <select id="camera-select" aria-label="攝影機" onchange="startCamera(this.value)">
     <option value="">正在搜尋鏡頭...</option>
   </select>
-
-  <select id="posture-select" onchange="changePosture()" aria-label="姿勢">
-    <option value="standing">站姿模式</option>
-    <option value="seated">坐姿模式</option>
-  </select>
-
-  <select id="mode-select" onchange="changeMode()" aria-label="模式">
+  <button type="button" class="secondary" onclick="initCamera()">啟用鏡頭</button>
+  <select id="mode" aria-label="模式" onchange="changeSettings()">
     <option value="standard">標準模式</option>
     <option value="infinite" selected>無限模式</option>
   </select>
-
-  <select id="time-select" onchange="changeTimeLimit()" aria-label="時間">
+  <select id="limit" aria-label="時間" onchange="changeSettings()">
     <option value="0">時間：不限時</option>
     <option value="30">時間：30 秒</option>
     <option value="300">時間：5 分鐘</option>
   </select>
-
-  <select id="bot-count-select" onchange="changeBotSettings()" aria-label="電腦數量">
+  <select id="bot-count" aria-label="電腦數量" onchange="changeSettings()">
     <option value="0">電腦：無</option>
     <option value="1">電腦：1 位</option>
     <option value="2">電腦：2 位</option>
     <option value="3">電腦：3 位</option>
   </select>
-
-  <select id="bot1-diff-select" onchange="changeBotSettings()" aria-label="電腦一難度" hidden>
+  <select id="bot1" aria-label="電腦一難度" onchange="changeSettings()" hidden>
     <option value="easy">電腦 1：初級</option>
     <option value="medium" selected>電腦 1：中級</option>
     <option value="hard">電腦 1：高級</option>
   </select>
-
-  <select id="bot2-diff-select" onchange="changeBotSettings()" aria-label="電腦二難度" hidden>
+  <select id="bot2" aria-label="電腦二難度" onchange="changeSettings()" hidden>
     <option value="easy">電腦 2：初級</option>
     <option value="medium">電腦 2：中級</option>
     <option value="hard" selected>電腦 2：高級</option>
   </select>
-
-  <select id="bot3-diff-select" onchange="changeBotSettings()" aria-label="電腦三難度" hidden>
+  <select id="bot3" aria-label="電腦三難度" onchange="changeSettings()" hidden>
     <option value="easy" selected>電腦 3：初級</option>
     <option value="medium">電腦 3：中級</option>
     <option value="hard">電腦 3：高級</option>
   </select>
-
-  <button type="button" class="btn-reset" onclick="resetTracking()">
-    重新校正
-  </button>
-
-  <button id="fullscreen-btn" type="button"
-          onclick="toggleFullscreen()" aria-pressed="false">
-    ⛶ 進入全螢幕
-  </button>
-
-  <button id="start-btn" type="button" onclick="toggleGame()">
-    ▶ 開始遊戲
-  </button>
-
-  <button type="button" class="btn-reset" onclick="resetGame()">
-    重置跑道
-  </button>
-
+  <button type="button" class="secondary" onclick="resetTracking()">重新校正</button>
+  <button id="fullscreen-btn" type="button" onclick="toggleFullscreen()" aria-pressed="false">⛶ 進入全螢幕</button>
+  <button id="start-btn" type="button" onclick="toggleGame()">▶ 開始遊戲</button>
+  <button type="button" class="secondary" onclick="resetGame()">重置跑道</button>
   <span id="fullscreen-status" role="status"></span>
 </div>
 
 <script>
 'use strict';
 
-const $ = id => document.getElementById(id);
+const $=id=>document.getElementById(id);
+const STEP=0.5, MIN_VISIBILITY=0.5, HIP_VISIBILITY=0.35;
+const SMOOTH_ALPHA=0.15, MAX_JUMP=0.12, LOST_MS=500;
+const CALIBRATION_FRAMES=18, CONFIRM_FRAMES=3;
+const gameCanvas=$('game-canvas'), c=gameCanvas.getContext('2d');
+const poseCanvas=$('pose-canvas'), pc=poseCanvas.getContext('2d'), video=$('webcam');
 
-// ==================================================
-// 遊戲設定
-// ==================================================
+let state='READY', position=0, visualPosition=0, elapsed=0, startTime=0;
+let infinite=true, timeLimit=0, botCount=0, bots=[];
+let counts={left:0,right:0}, keys={a:false,d:false};
+let lastStep={left:-Infinity,right:-Infinity};
+let footState={left:'DOWN',right:'DOWN'}, pending={left:0,right:0};
+let filtered=null, previousRaw=null, lastValid=-Infinity, calibrated=false;
+let samples=[], baseline={left:0,right:0};
+let stream=null, loopStarted=false, opening=false, cameraVersion=0;
+let lastFrame=performance.now(), lastHUD=0, lastRanking=0;
 
-const STEP_DISTANCE = 0.5;
-const MIN_VISIBILITY = 0.75;
-
-// 小幅抖動使用較強平滑，正常移動時稍微加快反應。
-const SMOOTH_ALPHA = 0.15;
-const SMALL_MOVEMENT_ALPHA = 0.08;
-
-// 單次影格座標跳動過大時，暫不接受。
-const MAX_POINT_JUMP = 0.12;
-
-// 追蹤中斷超過此時間，重新校正，避免沿用舊位置。
-const TRACKING_TIMEOUT_MS = 500;
-
-// 連續確認幾個影格後，才切換抬起／放下狀態。
-const CONFIRM_FRAMES = 3;
-
-// 校正時收集的有效影格數。
-const CALIBRATION_FRAMES = 18;
-
-// 以下為影像相對座標差，不是公尺。
-const STANDING_RAISE = 0.035;
-const STANDING_RELEASE = 0.015;
-const SEATED_RAISE = 0.06;
-const SEATED_RELEASE = 0.025;
-
-let gameState = 'READY';
-let playerPos = 0;
-let visualPos = 0;
-let elapsedTime = 0;
-let startTime = 0;
-let targetTimeLimit = 0;
-let isInfinite = true;
-let isSeated = false;
-
-let leftLiftCount = 0;
-let rightLiftCount = 0;
-let leftState = 'DOWN';
-let rightState = 'DOWN';
-
-const keyboardFeet = { a: false, d: false };
-const lastStepTime = { left: -Infinity, right: -Infinity };
-
-let botCount = 0;
-let bots = [];
-const BOT_COLORS = ['#f87171', '#fb923c', '#facc15'];
-const BOT_LANES = [-0.30, -0.05, 0.30];
-
-const gameCanvas = $('game-canvas');
-const gameCtx = gameCanvas.getContext('2d');
-const poseCanvas = $('pose-canvas');
-const poseCtx = poseCanvas.getContext('2d');
-const video = $('webcam');
-
-let currentStream = null;
-let detectionLoopStarted = false;
-let cameraRequestId = 0;
-
-// ==================================================
-// 全螢幕
-// ==================================================
-
-function fullscreenElement() {
-  return document.fullscreenElement ||
-         document.webkitFullscreenElement;
+function status(text,color='#9a751a'){
+  $('pose-status').textContent=text;
+  $('pose-status').style.color=color;
 }
 
-function updateFullscreenButton() {
-  const active = !!fullscreenElement();
-
-  $('fullscreen-btn').textContent =
-    active ? '⛶ 退出全螢幕' : '⛶ 進入全螢幕';
-
-  $('fullscreen-btn').setAttribute('aria-pressed', String(active));
+function text(id,value){
+  const v=String(value);
+  if($(id).textContent!==v) $(id).textContent=v;
 }
 
-async function toggleFullscreen() {
-  $('fullscreen-status').textContent = '';
+function activeFullscreen(){
+  return document.fullscreenElement||document.webkitFullscreenElement;
+}
 
-  try {
-    if (fullscreenElement()) {
-      const exit = document.exitFullscreen ||
-                   document.webkitExitFullscreen;
+function updateFullscreen(){
+  const active=!!activeFullscreen();
+  $('fullscreen-btn').textContent=active?'⛶ 退出全螢幕':'⛶ 進入全螢幕';
+  $('fullscreen-btn').setAttribute('aria-pressed',String(active));
+}
 
-      if (!exit) throw new Error('unsupported');
+async function toggleFullscreen(){
+  text('fullscreen-status','');
+  try{
+    if(activeFullscreen()){
+      const exit=document.exitFullscreen||document.webkitExitFullscreen;
+      if(!exit) throw Error('unsupported');
       await exit.call(document);
-    } else {
-      const root = document.documentElement;
-      const enter = root.requestFullscreen ||
-                    root.webkitRequestFullscreen;
-
-      if (!enter) throw new Error('unsupported');
+    }else{
+      const root=document.documentElement;
+      const enter=root.requestFullscreen||root.webkitRequestFullscreen;
+      if(!enter) throw Error('unsupported');
       await enter.call(root);
     }
-
-    updateFullscreenButton();
-  } catch (error) {
-    $('fullscreen-status').textContent =
-      '無法切換全螢幕，請使用瀏覽器的全螢幕功能。';
+    updateFullscreen();
+  }catch(error){
+    text('fullscreen-status','無法切換全螢幕，請使用瀏覽器的全螢幕功能。');
   }
 }
 
-document.addEventListener('fullscreenchange', updateFullscreenButton);
-document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
+document.addEventListener('fullscreenchange',updateFullscreen);
+document.addEventListener('webkitfullscreenchange',updateFullscreen);
 
-// ==================================================
-// A／D 鍵盤控制
-// ==================================================
-
-function getFootKey(event) {
-  if (event.code === 'KeyA') return 'a';
-  if (event.code === 'KeyD') return 'd';
-  return (event.key || '').toLowerCase();
+function recordStep(side){
+  if(state!=='RUNNING') return;
+  counts[side]++;
+  position+=STEP;
+  lastStep[side]=performance.now();
 }
 
-function recordStep(side) {
-  if (gameState !== 'RUNNING') return;
-
-  if (side === 'left') leftLiftCount++;
-  else rightLiftCount++;
-
-  playerPos += STEP_DISTANCE;
-  lastStepTime[side] = performance.now();
+function footKey(e){
+  return e.code==='KeyA'?'a':e.code==='KeyD'?'d':(e.key||'').toLowerCase();
 }
 
-document.addEventListener('keydown', event => {
-  const key = getFootKey(event);
-
-  if (!(key in keyboardFeet)) return;
-  if (event.repeat || event.ctrlKey || event.metaKey || event.altKey) return;
-  if (event.isComposing) return;
-  if (event.target.closest('input,textarea,[contenteditable]')) return;
-  if (gameState !== 'RUNNING' || keyboardFeet[key]) return;
-
-  event.preventDefault();
-  keyboardFeet[key] = true;
-
-  recordStep(key === 'a' ? 'left' : 'right');
+document.addEventListener('keydown',e=>{
+  const key=footKey(e);
+  if(!(key in keys)||e.repeat||e.ctrlKey||e.metaKey||e.altKey||e.isComposing) return;
+  if(e.target.closest('input,textarea,[contenteditable]')) return;
+  if(state!=='RUNNING'||keys[key]) return;
+  e.preventDefault();
+  keys[key]=true;
+  recordStep(key==='a'?'left':'right');
   updateHUD();
 });
 
-document.addEventListener('keyup', event => {
-  const key = getFootKey(event);
-
-  if (key in keyboardFeet) {
-    keyboardFeet[key] = false;
+document.addEventListener('keyup',e=>{
+  const key=footKey(e);
+  if(key in keys){
+    keys[key]=false;
     updateHUD();
   }
 });
 
-window.addEventListener('blur', () => {
-  keyboardFeet.a = false;
-  keyboardFeet.d = false;
+window.addEventListener('blur',()=>{
+  keys.a=keys.d=false;
   updateHUD();
 });
 
-// ==================================================
-// 穩定追蹤資料
-// ==================================================
-
-let filteredPoints = null;
-let previousRawPoints = null;
-let lastValidTrackingTime = -Infinity;
-let calibrated = false;
-let calibrationSamples = [];
-
-let leftBaseline = 0;
-let rightBaseline = 0;
-let seatedBaseline = 0;
-
-let leftPending = 0;
-let rightPending = 0;
-
-function setPoseStatus(text, color = '#708477') {
-  $('pose-status').textContent = text;
-  $('pose-status').style.color = color;
+// 追蹤與校正：顯示膝蓋點和判定計步分開處理。
+function clearTracking(){
+  filtered=null;
+  previousRaw=null;
+  lastValid=-Infinity;
+  calibrated=false;
+  samples=[];
+  footState={left:'DOWN',right:'DOWN'};
+  pending={left:0,right:0};
 }
 
-function clearTrackingData() {
-  filteredPoints = null;
-  previousRawPoints = null;
-  lastValidTrackingTime = -Infinity;
-  calibrated = false;
-  calibrationSamples = [];
-  leftPending = 0;
-  rightPending = 0;
-  leftState = 'DOWN';
-  rightState = 'DOWN';
+function resetTracking(){
+  clearTracking();
+  status('請放下雙腳，保持不動進行校正');
 }
 
-function resetTracking() {
-  clearTrackingData();
-  setPoseStatus('請放下雙腳、保持不動，準備校正', '#8d701a');
+function validPoint(p,threshold=MIN_VISIBILITY){
+  return !!p&&Number.isFinite(p.x)&&Number.isFinite(p.y)&&(p.visibility??0)>=threshold;
 }
 
-function validLandmark(point) {
-  return point &&
-    Number.isFinite(point.x) &&
-    Number.isFinite(point.y) &&
-    point.visibility >= MIN_VISIBILITY;
+function smoothPoint(old,p){
+  const dx=p.x-old.x,dy=p.y-old.y;
+  const alpha=Math.hypot(dx,dy)<0.015?0.08:SMOOTH_ALPHA;
+  return {x:old.x+dx*alpha,y:old.y+dy*alpha};
 }
 
-function smoothPoint(previous, current) {
-  const dx = current.x - previous.x;
-  const dy = current.y - previous.y;
-  const movement = Math.hypot(dx, dy);
-
-  const alpha = movement < 0.015
-    ? SMALL_MOVEMENT_ALPHA
-    : SMOOTH_ALPHA;
-
-  return {
-    x: previous.x + dx * alpha,
-    y: previous.y + dy * alpha
-  };
+function unavailable(message){
+  pending.left=pending.right=0;
+  if(performance.now()-lastValid>LOST_MS) clearTracking();
+  status(message);
 }
 
-function trackingUnavailable(message) {
-  // 中斷連續確認，避免零散影格累積成一次抬腳。
-  leftPending = 0;
-  rightPending = 0;
-  setPoseStatus(message, '#c67c13');
-
-  if (performance.now() - lastValidTrackingTime > TRACKING_TIMEOUT_MS) {
-    clearTrackingData();
-  }
-}
-
-function updateStablePoints(landmarks) {
-  if (!landmarks) {
-    trackingUnavailable('尚未辨識到身體 · 可按 A／D 遊玩');
+function updateStablePoints(lm){
+  if(!lm){
+    unavailable('尚未辨識到身體 · 可按 A／D 遊玩');
     return false;
   }
 
-  const raw = {
-    leftHip: landmarks[23],
-    rightHip: landmarks[24],
-    leftKnee: landmarks[25],
-    rightKnee: landmarks[26]
+  const raw={
+    leftHip:lm[23],rightHip:lm[24],
+    leftKnee:lm[25],rightKnee:lm[26]
   };
+  const names=Object.keys(raw);
 
-  const keys = Object.keys(raw);
-
-  if (!keys.every(key => validLandmark(raw[key]))) {
-    trackingUnavailable('請讓髖部與雙膝清楚入鏡');
+  if(!names.every(name=>validPoint(raw[name],name.includes('Hip')?HIP_VISIBILITY:MIN_VISIBILITY))){
+    unavailable('請讓髖部與雙膝入鏡 · 黃色點為確認中');
     return false;
   }
 
-  const now = performance.now();
+  const now=performance.now();
+  if(now-lastValid>LOST_MS) clearTracking();
 
-  if (now - lastValidTrackingTime > TRACKING_TIMEOUT_MS) {
-    clearTrackingData();
+  if(previousRaw&&names.some(name=>
+    Math.hypot(raw[name].x-previousRaw[name].x,raw[name].y-previousRaw[name].y)>MAX_JUMP
+  )){
+    unavailable('位置跳動，正在重新確認');
+    return false;
   }
 
-  if (previousRawPoints) {
-    const jumped = keys.some(key => {
-      const oldPoint = previousRawPoints[key];
-      const newPoint = raw[key];
-
-      return Math.hypot(
-        newPoint.x - oldPoint.x,
-        newPoint.y - oldPoint.y
-      ) > MAX_POINT_JUMP;
-    });
-
-    if (jumped) {
-      trackingUnavailable('偵測位置跳動，正在重新確認');
-      return false;
-    }
-  }
-
-  if (!filteredPoints) {
-    filteredPoints = {};
-
-    keys.forEach(key => {
-      filteredPoints[key] = {
-        x: raw[key].x,
-        y: raw[key].y
-      };
-    });
-  } else {
-    keys.forEach(key => {
-      filteredPoints[key] = smoothPoint(
-        filteredPoints[key],
-        raw[key]
-      );
-    });
-  }
-
-  previousRawPoints = {};
-
-  keys.forEach(key => {
-    previousRawPoints[key] = {
-      x: raw[key].x,
-      y: raw[key].y
-    };
+  const next={};
+  names.forEach(name=>{
+    next[name]=filtered
+      ?smoothPoint(filtered[name],raw[name])
+      :{x:raw[name].x,y:raw[name].y};
   });
 
-  lastValidTrackingTime = now;
+  filtered=next;
+  previousRaw={};
+  names.forEach(name=>{
+    previousRaw[name]={x:raw[name].x,y:raw[name].y};
+  });
+  lastValid=now;
   return true;
 }
 
-// ==================================================
-// 校正與抬腳判定
-// ==================================================
-
-function median(values) {
-  const sorted = [...values].sort((a, b) => a - b);
-  const middle = Math.floor(sorted.length / 2);
-
-  return sorted.length % 2
-    ? sorted[middle]
-    : (sorted[middle - 1] + sorted[middle]) / 2;
+function median(values){
+  const s=[...values].sort((a,b)=>a-b),m=Math.floor(s.length/2);
+  return s.length%2?s[m]:(s[m-1]+s[m])/2;
 }
 
-function collectCalibration() {
-  const p = filteredPoints;
-
-  const sample = {
-    left: p.leftKnee.y - p.leftHip.y,
-    right: p.rightKnee.y - p.rightHip.y,
-    seated: p.leftKnee.y - p.rightKnee.y
+function calibrate(){
+  const p=filtered;
+  const sample={
+    left:p.leftKnee.y-p.leftHip.y,
+    right:p.rightKnee.y-p.rightHip.y
   };
 
-  // 身體還在明顯移動時，重新收集校正資料。
-  if (calibrationSamples.length) {
-    const first = calibrationSamples[0];
-
-    if (
-      Math.abs(sample.left - first.left) > 0.02 ||
-      Math.abs(sample.right - first.right) > 0.02 ||
-      Math.abs(sample.seated - first.seated) > 0.025
-    ) {
-      calibrationSamples = [];
+  if(samples.length){
+    const first=samples[0];
+    if(Math.abs(sample.left-first.left)>0.02||Math.abs(sample.right-first.right)>0.02){
+      samples=[];
     }
   }
 
-  calibrationSamples.push(sample);
+  samples.push(sample);
+  status(`放下雙腳校正中 ${samples.length}/${CALIBRATION_FRAMES}`);
+  if(samples.length<CALIBRATION_FRAMES) return;
 
-  setPoseStatus(
-    `放下雙腳校正中 ${calibrationSamples.length}/${CALIBRATION_FRAMES}`,
-    '#8d701a'
-  );
+  ['left','right'].forEach(name=>{
+    baseline[name]=median(samples.map(p=>p[name]));
+  });
 
-  if (calibrationSamples.length < CALIBRATION_FRAMES) return false;
-
-  leftBaseline = median(calibrationSamples.map(item => item.left));
-  rightBaseline = median(calibrationSamples.map(item => item.right));
-  seatedBaseline = median(calibrationSamples.map(item => item.seated));
-
-  calibrated = true;
-  leftState = 'DOWN';
-  rightState = 'DOWN';
-  leftPending = 0;
-  rightPending = 0;
-
-  setPoseStatus('追蹤穩定 · 校正完成', '#16825e');
-  return true;
+  calibrated=true;
+  status('校正完成 · 追蹤正常','#16825e');
 }
 
-function confirmFootState(side, lift, raiseThreshold, releaseThreshold) {
-  const state = side === 'left' ? leftState : rightState;
+function confirmFoot(side,lift,raise,release){
+  const old=footState[side];
+  const change=old==='DOWN'?lift>raise:lift<release;
+  pending[side]=change?pending[side]+1:0;
 
-  const shouldChange = state === 'DOWN'
-    ? lift > raiseThreshold
-    : lift < releaseThreshold;
-
-  if (side === 'left') {
-    leftPending = shouldChange ? leftPending + 1 : 0;
-
-    if (leftPending >= CONFIRM_FRAMES) {
-      leftState = state === 'DOWN' ? 'UP' : 'DOWN';
-      leftPending = 0;
-
-      if (leftState === 'UP') recordStep('left');
-    }
-  } else {
-    rightPending = shouldChange ? rightPending + 1 : 0;
-
-    if (rightPending >= CONFIRM_FRAMES) {
-      rightState = state === 'DOWN' ? 'UP' : 'DOWN';
-      rightPending = 0;
-
-      if (rightState === 'UP') recordStep('right');
-    }
+  if(pending[side]>=CONFIRM_FRAMES){
+    footState[side]=old==='DOWN'?'UP':'DOWN';
+    pending[side]=0;
+    if(footState[side]==='UP') recordStep(side);
   }
 }
 
-function detectLegLift() {
-  const p = filteredPoints;
-
-  if (!calibrated) {
-    collectCalibration();
+function detectLegLift(){
+  if(!calibrated){
+    calibrate();
     return;
   }
 
-  if (isSeated) {
-    const difference =
-      (p.leftKnee.y - p.rightKnee.y) - seatedBaseline;
+  // 坐姿與站姿都使用各腳校正後的膝、髖相對高度。
+  const p=filtered;
+  const left=p.leftKnee.y-p.leftHip.y;
+  const right=p.rightKnee.y-p.rightHip.y;
 
-    // y 越小代表越高。
-    confirmFootState(
-      'left',
-      -difference,
-      SEATED_RAISE,
-      SEATED_RELEASE
-    );
+  confirmFoot('left',baseline.left-left,0.025,0.012);
+  confirmFoot('right',baseline.right-right,0.025,0.012);
 
-    confirmFootState(
-      'right',
-      difference,
-      SEATED_RAISE,
-      SEATED_RELEASE
-    );
-  } else {
-    // 使用校正後的「膝蓋相對髖部位置」，
-    // 避免原本固定加 0.25 不適合不同站位。
-    const leftRelative = p.leftKnee.y - p.leftHip.y;
-    const rightRelative = p.rightKnee.y - p.rightHip.y;
-
-    confirmFootState(
-      'left',
-      leftBaseline - leftRelative,
-      STANDING_RAISE,
-      STANDING_RELEASE
-    );
-
-    confirmFootState(
-      'right',
-      rightBaseline - rightRelative,
-      STANDING_RAISE,
-      STANDING_RELEASE
-    );
-
-    // 雙腳平放且接近基準時，緩慢適應小幅站姿變化。
-    if (
-      leftState === 'DOWN' &&
-      rightState === 'DOWN' &&
-      Math.abs(leftRelative - leftBaseline) < STANDING_RELEASE &&
-      Math.abs(rightRelative - rightBaseline) < STANDING_RELEASE
-    ) {
-      leftBaseline += (leftRelative - leftBaseline) * 0.01;
-      rightBaseline += (rightRelative - rightBaseline) * 0.01;
-    }
+  if(
+    footState.left==='DOWN'&&footState.right==='DOWN'&&
+    Math.abs(left-baseline.left)<0.012&&
+    Math.abs(right-baseline.right)<0.012
+  ){
+    baseline.left+=(left-baseline.left)*0.01;
+    baseline.right+=(right-baseline.right)*0.01;
   }
-
-  setPoseStatus('追蹤穩定', '#16825e');
+  status('追蹤正常','#16825e');
 }
 
-// ==================================================
-// MediaPipe 與攝影機
-// ==================================================
+function drawPoint(p,label,color,raised=false){
+  const x=p.x*poseCanvas.width,y=p.y*poseCanvas.height;
+  pc.beginPath();
+  pc.arc(x,y,raised?17:11,0,Math.PI*2);
+  pc.fillStyle=color+'33';
+  pc.fill();
+  pc.lineWidth=3;
+  pc.strokeStyle=color;
+  pc.stroke();
+  pc.save();
+  pc.translate(x,y-22);
+  pc.scale(-1,1);
+  pc.fillStyle=color;
+  pc.font='bold 14px system-ui';
+  pc.textAlign='center';
+  pc.fillText(label,0,0);
+  pc.restore();
+}
 
-const pose = typeof Pose === 'undefined'
-  ? null
-  : new Pose({
-      locateFile: file =>
-        `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+function onPoseResults(results){
+  const w=poseCanvas.width,h=poseCanvas.height,lm=results.poseLandmarks;
+  pc.save();
+  pc.clearRect(0,0,w,h);
+  pc.translate(w,0);
+  pc.scale(-1,1);
+  if(results.image) pc.drawImage(results.image,0,0,w,h);
+
+  if(updateStablePoints(lm)){
+    detectLegLift();
+    ['left','right'].forEach(side=>{
+      const raised=calibrated&&footState[side]==='UP';
+      const label=(side==='left'?'左膝':'右膝')+(raised?' ↑':'');
+      const color=calibrated?(raised?'#facc15':'#38bdf8'):'#facc15';
+      drawPoint(filtered[side+'Knee'],label,color,raised);
     });
+  }else if(lm){
+    // 髖部不清楚時仍顯示可辨識的膝蓋，提示點不計步。
+    if(validPoint(lm[25],0.35)) drawPoint(lm[25],'左膝（確認中）','#facc15');
+    if(validPoint(lm[26],0.35)) drawPoint(lm[26],'右膝（確認中）','#facc15');
+  }
 
-if (pose) {
+  pc.restore();
+}
+
+const pose=typeof Pose==='undefined'?null:new Pose({
+  locateFile:file=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+});
+
+if(pose){
   pose.setOptions({
-    modelComplexity: 1,
-    smoothLandmarks: true,
-    minDetectionConfidence: 0.7,
-    minTrackingConfidence: 0.7
+    modelComplexity:1,
+    smoothLandmarks:true,
+    minDetectionConfidence:0.5,
+    minTrackingConfidence:0.5
   });
-
   pose.onResults(onPoseResults);
 }
 
-async function initCameraDevices() {
-  if (!pose) {
-    setPoseStatus('追蹤模型未載入 · 可按 A／D 遊玩', '#c67c13');
-    $('camera-select').innerHTML =
-      '<option value="">體感模型未載入</option>';
+async function initCamera(){
+  if(opening) return;
+  if(!pose){
+    status('追蹤模型未載入 · 請確認網路或按 A／D 遊玩');
     return;
   }
 
-  try {
-    const temporaryStream =
-      await navigator.mediaDevices.getUserMedia({ video: true });
+  opening=true;
+  try{
+    const temporary=await navigator.mediaDevices.getUserMedia({video:true});
+    temporary.getTracks().forEach(track=>track.stop());
+    const cameras=(await navigator.mediaDevices.enumerateDevices())
+      .filter(d=>d.kind==='videoinput');
 
-    temporaryStream.getTracks().forEach(track => track.stop());
-
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    const cameras = devices.filter(device => device.kind === 'videoinput');
-
-    $('camera-select').innerHTML = '';
-
-    if (!cameras.length) {
-      setPoseStatus('未找到鏡頭 · 可按 A／D 遊玩', '#c67c13');
-      $('camera-select').innerHTML =
-        '<option value="">未找到攝影機</option>';
-      return;
-    }
-
-    cameras.forEach((device, index) => {
-      const option = document.createElement('option');
-      option.value = device.deviceId;
-      option.textContent = device.label || `攝影機 ${index + 1}`;
-      $('camera-select').appendChild(option);
+    $('camera-select').replaceChildren();
+    cameras.forEach((d,i)=>{
+      const o=document.createElement('option');
+      o.value=d.deviceId;
+      o.textContent=d.label||`攝影機 ${i+1}`;
+      $('camera-select').appendChild(o);
     });
 
+    if(!cameras.length) throw Error('no camera');
     await startCamera(cameras[0].deviceId);
-  } catch (error) {
-    setPoseStatus('鏡頭未啟用 · 可按 A／D 遊玩', '#c67c13');
-    $('camera-select').innerHTML =
-      '<option value="">鏡頭未啟用</option>';
+  }catch(error){
+    status('鏡頭未啟用 · 請允許攝影機，或按 A／D 遊玩');
+  }finally{
+    opening=false;
   }
 }
 
-async function startCamera(deviceId) {
-  const requestId = ++cameraRequestId;
-  setPoseStatus('鏡頭切換中...');
-  clearTrackingData();
+async function startCamera(deviceId){
+  if(!pose) return;
+  const version=++cameraVersion;
+  status('鏡頭開啟中...');
+  clearTracking();
 
-  if (currentStream) {
-    currentStream.getTracks().forEach(track => track.stop());
-  }
+  if(stream) stream.getTracks().forEach(track=>track.stop());
 
-  try {
-    const constraints = {
-      width: { ideal: 640 },
-      height: { ideal: 480 }
-    };
+  try{
+    const v={width:{ideal:640},height:{ideal:480}};
+    if(deviceId) v.deviceId={exact:deviceId};
 
-    if (deviceId) constraints.deviceId = { exact: deviceId };
-
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: constraints
-    });
-
-    if (requestId !== cameraRequestId) {
-      stream.getTracks().forEach(track => track.stop());
+    const next=await navigator.mediaDevices.getUserMedia({video:v});
+    if(version!==cameraVersion){
+      next.getTracks().forEach(track=>track.stop());
       return;
     }
 
-    currentStream = stream;
-    video.srcObject = stream;
+    stream=next;
+    video.srcObject=next;
     await video.play();
-
     resetTracking();
 
-    if (!detectionLoopStarted) {
-      detectionLoopStarted = true;
+    if(!loopStarted){
+      loopStarted=true;
       detectFrameLoop();
     }
-  } catch (error) {
-    if (requestId === cameraRequestId) {
-      setPoseStatus('鏡頭無法開啟 · 可按 A／D 遊玩', '#c67c13');
-    }
+  }catch(error){
+    if(version===cameraVersion) status('鏡頭無法開啟 · 可按 A／D 遊玩');
   }
 }
 
-function switchCamera(deviceId) {
-  if (deviceId) startCamera(deviceId);
-}
-
-async function detectFrameLoop() {
-  try {
-    if (pose && video.readyState >= 2 && !video.paused && !video.ended) {
-      await pose.send({ image: video });
+async function detectFrameLoop(){
+  try{
+    if(video.readyState>=2&&!video.paused&&!video.ended){
+      await pose.send({image:video});
     }
-  } catch (error) {
-    trackingUnavailable('追蹤暫時失敗 · 可按 A／D 遊玩');
+  }catch(error){
+    unavailable('追蹤暫時失敗 · 請確認網路後重新啟用鏡頭');
   }
-
   requestAnimationFrame(detectFrameLoop);
 }
 
-function onPoseResults(results) {
-  const w = poseCanvas.width;
-  const h = poseCanvas.height;
-
-  poseCtx.save();
-  poseCtx.clearRect(0, 0, w, h);
-  poseCtx.translate(w, 0);
-  poseCtx.scale(-1, 1);
-
-  if (results.image) {
-    poseCtx.drawImage(results.image, 0, 0, w, h);
-  }
-
-  if (updateStablePoints(results.poseLandmarks)) {
-    detectLegLift();
-
-    drawTracker(filteredPoints.leftKnee, '左膝', leftState === 'UP');
-    drawTracker(filteredPoints.rightKnee, '右膝', rightState === 'UP');
-  }
-
-  poseCtx.restore();
+// 電腦對戰
+function speedRange(diff){
+  return diff==='hard'?[2,2.8]:diff==='medium'?[1.2,1.8]:[0.5,1];
 }
 
-function drawTracker(point, label, raised) {
-  const x = point.x * poseCanvas.width;
-  const y = point.y * poseCanvas.height;
-  const color = !calibrated
-    ? '#ffffff'
-    : raised ? '#facc15' : '#38bdf8';
+function initBots(){
+  bots=[];
+  if(!infinite) return;
+  const colors=['#f87171','#fb923c','#facc15'],lanes=[-0.3,-0.05,0.3];
 
-  poseCtx.beginPath();
-  poseCtx.arc(x, y, raised ? 17 : 11, 0, Math.PI * 2);
-  poseCtx.fillStyle = color + '33';
-  poseCtx.fill();
-  poseCtx.lineWidth = 3;
-  poseCtx.strokeStyle = color;
-  poseCtx.stroke();
-
-  poseCtx.save();
-  poseCtx.translate(x, y - 22);
-  poseCtx.scale(-1, 1);
-  poseCtx.fillStyle = color;
-  poseCtx.font = 'bold 14px system-ui';
-  poseCtx.textAlign = 'center';
-  poseCtx.fillText(label + (raised ? ' ↑' : ''), 0, 0);
-  poseCtx.restore();
-}
-
-// ==================================================
-// 電腦跑者
-// ==================================================
-
-function getBotSpeedRange(difficulty) {
-  if (difficulty === 'medium') return [1.2, 1.8];
-  if (difficulty === 'hard') return [2.0, 2.8];
-  return [0.5, 1.0];
-}
-
-function initBots() {
-  bots = [];
-
-  if (!isInfinite) return;
-
-  for (let i = 0; i < botCount; i++) {
-    const difficulty = $(`bot${i + 1}-diff-select`).value;
-    const [min, max] = getBotSpeedRange(difficulty);
-    const speed = min + Math.random() * (max - min);
-
+  for(let i=0;i<botCount;i++){
+    const difficulty=$('bot'+(i+1)).value;
+    const [min,max]=speedRange(difficulty);
+    const speed=min+Math.random()*(max-min);
     bots.push({
-      id: i + 1,
-      name: `電腦 ${i + 1}`,
-      difficulty,
-      pos: 0,
-      speed,
-      targetSpeed: speed,
-      changeTimer: 0,
-      color: BOT_COLORS[i],
-      lane: BOT_LANES[i]
+      name:'電腦 '+(i+1),id:i+1,difficulty,pos:0,speed,
+      target:speed,timer:0,color:colors[i],lane:lanes[i]
     });
   }
 }
 
-function updateBots(dt) {
-  for (const bot of bots) {
-    bot.changeTimer -= dt;
-
-    if (bot.changeTimer <= 0) {
-      const [min, max] = getBotSpeedRange(bot.difficulty);
-      bot.targetSpeed = min + Math.random() * (max - min);
-      bot.changeTimer = 0.5 + Math.random() * 1.5;
+function updateBots(dt){
+  bots.forEach(bot=>{
+    bot.timer-=dt;
+    if(bot.timer<=0){
+      const [min,max]=speedRange(bot.difficulty);
+      bot.target=min+Math.random()*(max-min);
+      bot.timer=0.5+Math.random()*1.5;
     }
-
-    bot.speed +=
-      (bot.targetSpeed - bot.speed) * (1 - Math.exp(-3 * dt));
-
-    bot.pos += bot.speed * dt;
-  }
+    bot.speed+=(bot.target-bot.speed)*(1-Math.exp(-3*dt));
+    bot.pos+=bot.speed*dt;
+  });
 }
 
-function sortedRunners() {
+function ranking(){
   return [
-    {
-      name: '你（玩家）',
-      pos: playerPos,
-      isPlayer: true,
-      color: '#16825e'
-    },
-    ...bots.map(bot => ({
-      name: bot.name,
-      pos: bot.pos,
-      isPlayer: false,
-      color: bot.color
-    }))
-  ].sort((a, b) => b.pos - a.pos);
+    {name:'你（玩家）',pos:position,player:true,color:'#16825e'},
+    ...bots.map(b=>({name:b.name,pos:b.pos,player:false,color:b.color}))
+  ].sort((a,b)=>b.pos-a.pos);
 }
 
-// ==================================================
-// 跑道畫面
-// ==================================================
-
-function renderTrack(now, dt) {
-  const c = gameCtx;
-  const w = gameCanvas.width;
-  const h = gameCanvas.height;
-  const horizon = h * 0.38;
-  const center = w / 2;
-  const topWidth = 38;
-  const bottomWidth = w * 0.84;
-
-  visualPos +=
-    (playerPos - visualPos) * (1 - Math.exp(-10 * dt));
-
-  const sky = c.createLinearGradient(0, 0, 0, horizon);
-  sky.addColorStop(0, '#88cee6');
-  sky.addColorStop(1, '#e0f2e5');
-
-  c.fillStyle = sky;
-  c.fillRect(0, 0, w, h);
-
-  c.fillStyle = '#fff1b0';
-  c.beginPath();
-  c.arc(w * 0.79, h * 0.16, 33, 0, Math.PI * 2);
-  c.fill();
-
-  for (let i = 0; i < 5; i++) {
-    c.fillStyle = '#ffffffaa';
-    c.beginPath();
-    c.ellipse(
-      (i * 211 + 95) % w,
-      65 + i % 2 * 37,
-      65, 12, 0, 0, Math.PI * 2
-    );
-    c.fill();
-  }
-
-  for (let layer = 0; layer < 2; layer++) {
-    c.fillStyle = layer ? '#70a895' : '#a4c5b7';
-    c.beginPath();
-    c.moveTo(0, horizon + 30);
-
-    for (let x = 0; x <= w; x += 40) {
-      c.lineTo(
-        x,
-        horizon - 35 - layer * 12 -
-        Math.sin(x * 0.012 + layer * 2) * 22
-      );
-    }
-
-    c.lineTo(w, horizon + 40);
-    c.closePath();
-    c.fill();
-  }
-
-  const grass = c.createLinearGradient(0, horizon, 0, h);
-  grass.addColorStop(0, '#99bc78');
-  grass.addColorStop(1, '#4e8b62');
-
-  c.fillStyle = grass;
-  c.fillRect(0, horizon, w, h - horizon);
-
-  for (let i = 0; i < 4; i++) {
-    const left = -0.5 + i * 0.25;
-    const right = left + 0.25;
-
-    c.beginPath();
-    c.moveTo(center + topWidth * left, horizon);
-    c.lineTo(center + topWidth * right, horizon);
-    c.lineTo(center + bottomWidth * right, h);
-    c.lineTo(center + bottomWidth * left, h);
-    c.closePath();
-
-    c.fillStyle = i % 2 ? '#cd785c' : '#d98668';
-    c.fill();
-  }
-
-  for (let i = 0; i <= 4; i++) {
-    const offset = -0.5 + i * 0.25;
-
-    c.beginPath();
-    c.moveTo(center + topWidth * offset, horizon);
-    c.lineTo(center + bottomWidth * offset, h);
-    c.strokeStyle = '#fff6df';
-    c.lineWidth = i === 0 || i === 4 ? 5 : 2;
-    c.stroke();
-  }
-
-  for (
-    let meter = Math.max(0, Math.floor(visualPos) - 1);
-    meter < visualPos + 45;
-    meter++
-  ) {
-    const distance = meter - visualPos;
-    if (distance < -1) continue;
-
-    const ratio = 1 / (1 + (distance + 1) * 0.16);
-    const y = horizon + (h - horizon) * ratio;
-    const width = topWidth + (bottomWidth - topWidth) * ratio;
-
-    c.beginPath();
-    c.moveTo(center - width / 2, y);
-    c.lineTo(center + width / 2, y);
-    c.strokeStyle = meter % 5 === 0 ? '#fff1ccbb' : '#ffffff35';
-    c.lineWidth = meter % 5 === 0 ? 3 : 1;
-    c.stroke();
-
-    if (meter % 5 === 0) {
-      c.fillStyle = '#fff9df';
-      c.font = `bold ${Math.max(11, 18 * ratio)}px system-ui`;
-      c.textAlign = 'right';
-      c.fillText(meter + ' m', center - width / 2 - 10, y);
-    }
-
-    if (meter === 0) {
-      for (let j = 0; j < 24; j++) {
-        c.fillStyle = j % 2 ? '#31453f' : '#fff';
-
-        c.fillRect(
-          center - width / 2 + j * width / 24,
-          y - 6 * ratio,
-          width / 24,
-          12 * ratio
-        );
-      }
-    }
-  }
-
-  const runners = [
-    { pos: playerPos, isPlayer: true },
-    ...bots.map(bot => ({ pos: bot.pos, bot }))
-  ].sort((a, b) => b.pos - a.pos);
-
-  for (const runner of runners) {
-    if (runner.isPlayer) {
-      const leftRaised = gameState === 'RUNNING' && (
-        keyboardFeet.a ||
-        (calibrated && leftState === 'UP') ||
-        now - lastStepTime.left < 220
-      );
-
-      const rightRaised = gameState === 'RUNNING' && (
-        keyboardFeet.d ||
-        (calibrated && rightState === 'UP') ||
-        now - lastStepTime.right < 220
-      );
-
-      drawAthlete(
-        center + (bots.length ? bottomWidth * 0.125 : 0),
-        h - 70,
-        1.35,
-        '#176954',
-        '你',
-        leftRaised ? 1 : 0,
-        rightRaised ? 1 : 0
-      );
-    } else {
-      const distance = runner.pos - visualPos;
-      if (distance < -2 || distance > 40) continue;
-
-      const ratio = Math.min(1.2, 1 / (1 + distance * 0.12));
-      const width = topWidth + (bottomWidth - topWidth) * ratio;
-
-      const swing = gameState === 'RUNNING'
-        ? Math.sin(now * 0.012 + runner.bot.id)
-        : 0;
-
-      drawAthlete(
-        center + runner.bot.lane * width,
-        horizon + (h - 70 - horizon) * ratio,
-        Math.max(0.25, ratio) * 1.2,
-        runner.bot.color,
-        runner.bot.name,
-        Math.max(0, swing),
-        Math.max(0, -swing)
-      );
-    }
-  }
-
-  if (gameState === 'READY') {
-    c.fillStyle = '#164c3de0';
-    c.fillRect(center - 168, horizon - 53, 336, 42);
-    c.fillStyle = '#fff';
-    c.textAlign = 'center';
-    c.font = 'bold 17px system-ui';
-    c.fillText('點擊「開始遊戲」踏出第一步', center, horizon - 26);
-  }
-}
-
-function drawAthlete(x, y, scale, color, label, leftLift, rightLift) {
-  const c = gameCtx;
-
-  c.save();
-  c.translate(x, y);
-  c.scale(scale, scale);
-  c.lineCap = 'round';
-  c.lineJoin = 'round';
-
-  c.fillStyle = '#193a3b28';
-  c.beginPath();
-  c.ellipse(0, 2, 18, 5, 0, 0, Math.PI * 2);
-  c.fill();
-
-  function limb(points, limbColor, width) {
-    c.strokeStyle = limbColor;
-    c.lineWidth = width;
-    c.beginPath();
-
-    points.forEach((point, index) => {
-      if (index) c.lineTo(...point);
-      else c.moveTo(...point);
-    });
-
-    c.stroke();
-  }
-
-  function leg(side, lift) {
-    const hip = [side * 5, -29];
-    const knee = [side * (7 + lift), -15 - lift * 7];
-    const foot = [side * (8 + lift * 2), -1 - lift * 15];
-
-    limb([hip, knee], '#253f50', 8);
-    limb([knee, foot], '#dfab87', 5.5);
-
-    limb([
-      [foot[0] - 3, foot[1]],
-      [foot[0] + 4, foot[1] + 1]
-    ], '#fff8e6', 5);
-  }
-
-  leg(-1, leftLift);
-  leg(1, rightLift);
-
-  function arm(side, forward) {
-    limb([
-      [side * 10, -53],
-      [side * 16, -40 - forward * 2],
-      [side * 11, -44 - forward * 7]
-    ], '#dfab87', 5);
-  }
-
-  arm(-1, rightLift);
-  arm(1, leftLift);
-
-  c.fillStyle = color;
-  c.beginPath();
-  c.moveTo(-11, -55);
-  c.quadraticCurveTo(0, -59, 11, -55);
-  c.lineTo(8, -30);
-  c.lineTo(-8, -30);
-  c.closePath();
-  c.fill();
-
-  c.fillStyle = '#263f50';
-  c.fillRect(-8, -31, 16, 7);
-
-  c.fillStyle = '#fff5dd';
-  c.fillRect(-5, -48, 10, 11);
-  c.fillStyle = '#244f43';
-  c.textAlign = 'center';
-  c.font = 'bold 8px system-ui';
-  c.fillText('1', 0, -40);
-
-  limb([[0, -55], [0, -60]], '#d9a27e', 6);
-
-  c.fillStyle = '#dfa987';
-  c.beginPath();
-  c.ellipse(0, -66, 8.5, 10, 0, 0, Math.PI * 2);
-  c.fill();
-
-  c.fillStyle = '#263b34';
-  c.beginPath();
-  c.ellipse(0, -69, 8.5, 7, 0, 0, Math.PI * 2);
-  c.fill();
-
-  c.fillStyle = '#fff';
-  c.font = 'bold 12px system-ui';
-  c.shadowColor = '#173d34';
-  c.shadowBlur = 4;
-  c.fillText(label, 0, -85);
-  c.restore();
-}
-
-// ==================================================
-// 資訊、排名與設定
-// ==================================================
-
-function formatTime(seconds) {
-  const tenths = Math.floor(Math.max(0, seconds) * 10);
-  const minutes = Math.floor(tenths / 600);
-  const wholeSeconds = Math.floor(tenths / 10) % 60;
-
-  return (
-    String(minutes).padStart(2, '0') + ':' +
-    String(wholeSeconds).padStart(2, '0') + '.' +
-    (tenths % 10)
-  );
-}
-
-function setText(id, text) {
-  const element = $(id);
-  const value = String(text);
-
-  if (element.textContent !== value) {
-    element.textContent = value;
-  }
-}
-
-function fillRanking(id) {
-  const body = $(id);
+function fillRanking(id){
+  const body=$(id);
   body.replaceChildren();
-
-  sortedRunners().forEach((runner, index) => {
-    const row = document.createElement('tr');
-    row.className = runner.isPlayer ? 'player-row' : '';
-
-    const rankCell = document.createElement('td');
-    rankCell.textContent = `第 ${index + 1} 名`;
-
-    const nameCell = document.createElement('td');
-    nameCell.textContent = runner.name;
-    nameCell.style.color = runner.color;
-
-    row.append(rankCell, nameCell);
+  ranking().forEach((runner,i)=>{
+    const row=document.createElement('tr');
+    row.className=runner.player?'player-row':'';
+    const rank=document.createElement('td'),name=document.createElement('td');
+    rank.textContent='第 '+(i+1)+' 名';
+    name.textContent=runner.name;
+    name.style.color=runner.color;
+    row.append(rank,name);
     body.appendChild(row);
   });
 }
 
-function updateHUD() {
-  setText('hud-dist', playerPos.toFixed(2));
-  setText('hud-left-count', leftLiftCount);
-  setText('hud-right-count', rightLiftCount);
-
-  const recentlyTracked =
-    calibrated &&
-    performance.now() - lastValidTrackingTime <= TRACKING_TIMEOUT_MS;
-
-  const leftRaised =
-    keyboardFeet.a || (recentlyTracked && leftState === 'UP');
-
-  const rightRaised =
-    keyboardFeet.d || (recentlyTracked && rightState === 'UP');
-
-  setText('hud-left-status', leftRaised ? '抬起 ↑' : '平放');
-  setText('hud-right-status', rightRaised ? '抬起 ↑' : '平放');
-
-  $('hud-left-status').className =
-    leftRaised ? 'status-up' : 'status-down';
-
-  $('hud-right-status').className =
-    rightRaised ? 'status-up' : 'status-down';
-
-  $('ranking-panel').hidden = !(isInfinite && bots.length > 0);
-
-  setText(
-    'hud-time',
-    isInfinite && targetTimeLimit > 0
-      ? formatTime(Math.max(0, targetTimeLimit - elapsedTime)) + '（倒數）'
-      : formatTime(elapsedTime)
-  );
+function formatTime(seconds){
+  const t=Math.floor(Math.max(0,seconds)*10);
+  return String(Math.floor(t/600)).padStart(2,'0')+':'+
+    String(Math.floor(t/10)%60).padStart(2,'0')+'.'+t%10;
 }
 
-function updateBotControlsUI() {
-  $('time-select').hidden = !isInfinite;
-  $('bot-count-select').hidden = !isInfinite;
+function updateHUD(){
+  text('distance',position.toFixed(2));
+  text('left-count',counts.left);
+  text('right-count',counts.right);
+  const fresh=calibrated&&performance.now()-lastValid<=LOST_MS;
 
-  for (let i = 1; i <= 3; i++) {
-    $(`bot${i}-diff-select`).hidden =
-      !isInfinite || botCount < i;
-  }
+  ['left','right'].forEach(side=>{
+    const raised=keys[side==='left'?'a':'d']||(fresh&&footState[side]==='UP');
+    text(side+'-status',raised?'抬起 ↑':'平放');
+    $(side+'-status').className=raised?'up':'down';
+  });
+
+  text('time',infinite&&timeLimit>0
+    ?formatTime(Math.max(0,timeLimit-elapsed))+'（倒數）'
+    :formatTime(elapsed));
+  $('ranking-panel').hidden=bots.length===0;
 }
 
-function changePosture() {
-  isSeated = $('posture-select').value === 'seated';
-
-  $('instruction-text').textContent = isSeated
-    ? '坐姿模式：先放下雙腳完成校正，再交替抬膝；也可按 A／D 前進。'
-    : '站姿模式：先放下雙腳完成校正，再交替抬腳；也可按 A／D 前進。';
-
+function changeSettings(){
+  infinite=$('mode').value==='infinite';
+  timeLimit=Number($('limit').value);
+  botCount=Number($('bot-count').value);
+  $('limit').hidden=$('bot-count').hidden=!infinite;
+  for(let i=1;i<=3;i++) $('bot'+i).hidden=!infinite||botCount<i;
   resetGame();
 }
 
-function changeMode() {
-  isInfinite = $('mode-select').value === 'infinite';
-  updateBotControlsUI();
-  resetGame();
-}
-
-function changeTimeLimit() {
-  targetTimeLimit = Number($('time-select').value);
-  resetGame();
-}
-
-function changeBotSettings() {
-  botCount = Number($('bot-count-select').value);
-  updateBotControlsUI();
-  resetGame();
-}
-
-// ==================================================
-// 遊戲流程
-// ==================================================
-
-function resetGame() {
-  gameState = 'READY';
-  playerPos = 0;
-  visualPos = 0;
-  elapsedTime = 0;
-
-  leftLiftCount = 0;
-  rightLiftCount = 0;
-  keyboardFeet.a = false;
-  keyboardFeet.d = false;
-  lastStepTime.left = -Infinity;
-  lastStepTime.right = -Infinity;
-
-  clearTrackingData();
+function resetGame(){
+  state='READY';
+  position=visualPosition=elapsed=0;
+  counts={left:0,right:0};
+  keys.a=keys.d=false;
+  lastStep={left:-Infinity,right:-Infinity};
+  clearTracking();
   initBots();
-
-  $('win-modal').classList.remove('show');
-  $('start-btn').textContent = '▶ 開始遊戲';
-  $('start-btn').classList.remove('btn-stop');
-
-  if (currentStream) {
-    setPoseStatus('請放下雙腳，等待校正', '#8d701a');
-  }
-
+  $('result').classList.remove('show');
+  text('start-btn','▶ 開始遊戲');
+  $('start-btn').classList.remove('stop');
+  if(stream) status('請放下雙腳，等待校正');
   fillRanking('ranking-body');
   updateHUD();
 }
 
-function toggleGame() {
-  if (gameState === 'RUNNING') {
-    elapsedTime = (performance.now() - startTime) / 1000;
-
-    if (isInfinite && targetTimeLimit > 0) {
-      elapsedTime = Math.min(elapsedTime, targetTimeLimit);
-    }
-
-    finishRun();
+function toggleGame(){
+  if(state==='RUNNING'){
+    advanceGame(performance.now());
+    if(state==='RUNNING') finishRun();
     return;
   }
 
   resetGame();
-  startTime = performance.now();
-  lastFrameTime = startTime;
-  gameState = 'RUNNING';
-
-  $('start-btn').textContent = '🏁 結束並結算';
-  $('start-btn').classList.add('btn-stop');
+  startTime=performance.now();
+  lastFrame=startTime;
+  state='RUNNING';
+  text('start-btn','🏁 結束並結算');
+  $('start-btn').classList.add('stop');
 }
 
-function finishRun() {
-  if (gameState !== 'RUNNING') return;
-
-  gameState = 'FINISHED';
-  keyboardFeet.a = false;
-  keyboardFeet.d = false;
-  leftState = 'DOWN';
-  rightState = 'DOWN';
-
-  setText('final-dist', playerPos.toFixed(2));
-  setText('final-time', formatTime(elapsedTime));
-  setText('final-left-count', leftLiftCount);
-  setText('final-right-count', rightLiftCount);
-
-  $('final-ranking').hidden = bots.length === 0;
-  fillRanking('final-ranking-body');
+function finishRun(){
+  if(state!=='RUNNING') return;
+  state='FINISHED';
+  keys.a=keys.d=false;
+  footState.left=footState.right='DOWN';
+  text('final-distance',position.toFixed(2));
+  text('final-time',formatTime(elapsed));
+  text('final-left',counts.left);
+  text('final-right',counts.right);
+  $('final-ranking').hidden=bots.length===0;
+  fillRanking('final-body');
   fillRanking('ranking-body');
-
-  $('win-modal').classList.add('show');
-  $('start-btn').textContent = '▶ 開始遊戲';
-  $('start-btn').classList.remove('btn-stop');
-
+  $('result').classList.add('show');
+  text('start-btn','▶ 開始遊戲');
+  $('start-btn').classList.remove('stop');
   updateHUD();
 }
 
-let lastFrameTime = performance.now();
-let lastHUDTime = 0;
-let lastRankingTime = 0;
+function advanceGame(now){
+  const next=(now-startTime)/1000,limited=infinite&&timeLimit>0;
+  const effective=limited?Math.min(next,timeLimit):next;
+  updateBots(Math.max(0,effective-elapsed));
+  elapsed=effective;
+  if(limited&&elapsed>=timeLimit) finishRun();
+}
 
-function gameLoop(now) {
-  const rawDt = Math.max(0, (now - lastFrameTime) / 1000);
-  lastFrameTime = now;
+// 跑者與戶外跑道
+function drawRunner(x,y,scale,color,label,leftLift,rightLift){
+  c.save();
+  c.translate(x,y);
+  c.scale(scale,scale);
+  c.lineCap='round';
+  c.lineJoin='round';
 
-  if (gameState === 'RUNNING') {
-    const nextElapsed = (now - startTime) / 1000;
-    const limited = isInfinite && targetTimeLimit > 0;
+  c.fillStyle='#193a3b28';
+  c.beginPath();
+  c.ellipse(0,2,18,5,0,0,Math.PI*2);
+  c.fill();
 
-    const effectiveElapsed = limited
-      ? Math.min(nextElapsed, targetTimeLimit)
-      : nextElapsed;
+  function limb(points,col,width){
+    c.strokeStyle=col;
+    c.lineWidth=width;
+    c.beginPath();
+    points.forEach((p,i)=>i?c.lineTo(...p):c.moveTo(...p));
+    c.stroke();
+  }
 
-    const simulationDt = Math.max(0, effectiveElapsed - elapsedTime);
+  function leg(side,lift){
+    const hip=[side*5,-29];
+    const knee=[side*(7+lift),-15-lift*7];
+    const foot=[side*(8+lift*2),-1-lift*15];
+    limb([hip,knee],'#253f50',8);
+    limb([knee,foot],'#dfab87',5.5);
+    limb([[foot[0]-3,foot[1]],[foot[0]+4,foot[1]+1]],'#fff8e6',5);
+  }
 
-    updateBots(simulationDt);
-    elapsedTime = effectiveElapsed;
+  function arm(side,lift){
+    limb([[side*10,-53],[side*16,-40-lift*2],[side*11,-44-lift*7]],'#dfab87',5);
+  }
 
-    if (limited && elapsedTime >= targetTimeLimit) {
-      finishRun();
+  leg(-1,leftLift);
+  leg(1,rightLift);
+  arm(-1,rightLift);
+  arm(1,leftLift);
+
+  c.fillStyle=color;
+  c.beginPath();
+  c.moveTo(-11,-55);
+  c.quadraticCurveTo(0,-59,11,-55);
+  c.lineTo(8,-30);
+  c.lineTo(-8,-30);
+  c.closePath();
+  c.fill();
+
+  c.fillStyle='#263f50';
+  c.fillRect(-8,-31,16,7);
+  c.fillStyle='#fff5dd';
+  c.fillRect(-5,-48,10,11);
+  c.fillStyle='#244f43';
+  c.textAlign='center';
+  c.font='bold 8px system-ui';
+  c.fillText('1',0,-40);
+  limb([[0,-55],[0,-60]],'#d9a27e',6);
+
+  c.fillStyle='#dfa987';
+  c.beginPath();
+  c.ellipse(0,-66,8.5,10,0,0,Math.PI*2);
+  c.fill();
+  c.fillStyle='#263b34';
+  c.beginPath();
+  c.ellipse(0,-69,8.5,7,0,0,Math.PI*2);
+  c.fill();
+
+  c.fillStyle='#fff';
+  c.font='bold 12px system-ui';
+  c.shadowColor='#173d34';
+  c.shadowBlur=4;
+  c.fillText(label,0,-85);
+  c.restore();
+}
+
+function renderTrack(now,dt){
+  const w=gameCanvas.width,h=gameCanvas.height;
+  const hy=h*0.38,cx=w/2,top=38,bottom=w*0.84;
+  visualPosition+=(position-visualPosition)*(1-Math.exp(-10*dt));
+
+  const sky=c.createLinearGradient(0,0,0,hy);
+  sky.addColorStop(0,'#88cee6');
+  sky.addColorStop(1,'#e0f2e5');
+  c.fillStyle=sky;
+  c.fillRect(0,0,w,h);
+
+  c.fillStyle='#fff1b0';
+  c.beginPath();
+  c.arc(w*0.79,h*0.16,33,0,Math.PI*2);
+  c.fill();
+
+  for(let i=0;i<5;i++){
+    c.fillStyle='#ffffffaa';
+    c.beginPath();
+    c.ellipse((i*211+95)%w,65+i%2*37,65,12,0,0,Math.PI*2);
+    c.fill();
+  }
+
+  for(let layer=0;layer<2;layer++){
+    c.fillStyle=layer?'#70a895':'#a4c5b7';
+    c.beginPath();
+    c.moveTo(0,hy+30);
+    for(let x=0;x<=w;x+=40){
+      c.lineTo(x,hy-35-layer*12-Math.sin(x*0.012+layer*2)*22);
+    }
+    c.lineTo(w,hy+40);
+    c.closePath();
+    c.fill();
+  }
+
+  const grass=c.createLinearGradient(0,hy,0,h);
+  grass.addColorStop(0,'#99bc78');
+  grass.addColorStop(1,'#4e8b62');
+  c.fillStyle=grass;
+  c.fillRect(0,hy,w,h-hy);
+
+  for(let i=0;i<4;i++){
+    const l=-0.5+i*0.25,r=l+0.25;
+    c.beginPath();
+    c.moveTo(cx+top*l,hy);
+    c.lineTo(cx+top*r,hy);
+    c.lineTo(cx+bottom*r,h);
+    c.lineTo(cx+bottom*l,h);
+    c.closePath();
+    c.fillStyle=i%2?'#cd785c':'#d98668';
+    c.fill();
+  }
+
+  for(let i=0;i<=4;i++){
+    const o=-0.5+i*0.25;
+    c.beginPath();
+    c.moveTo(cx+top*o,hy);
+    c.lineTo(cx+bottom*o,h);
+    c.strokeStyle='#fff6df';
+    c.lineWidth=i===0||i===4?5:2;
+    c.stroke();
+  }
+
+  for(let m=Math.max(0,Math.floor(visualPosition)-1);m<visualPosition+45;m++){
+    const d=m-visualPosition;
+    if(d< -1) continue;
+    const p=1/(1+(d+1)*0.16),y=hy+(h-hy)*p,tw=top+(bottom-top)*p;
+    c.beginPath();
+    c.moveTo(cx-tw/2,y);
+    c.lineTo(cx+tw/2,y);
+    c.strokeStyle=m%5===0?'#fff1ccbb':'#ffffff35';
+    c.lineWidth=m%5===0?3:1;
+    c.stroke();
+
+    if(m%5===0){
+      c.fillStyle='#fff9df';
+      c.font=`bold ${Math.max(11,18*p)}px system-ui`;
+      c.textAlign='right';
+      c.fillText(m+' m',cx-tw/2-10,y);
+    }
+
+    if(m===0){
+      for(let j=0;j<24;j++){
+        c.fillStyle=j%2?'#31453f':'#fff';
+        c.fillRect(cx-tw/2+j*tw/24,y-6*p,tw/24,12*p);
+      }
     }
   }
 
-  renderTrack(now, Math.min(rawDt, 0.1));
+  const runners=[
+    {pos:position,player:true},
+    ...bots.map(bot=>({pos:bot.pos,bot}))
+  ].sort((a,b)=>b.pos-a.pos);
+  const fresh=calibrated&&now-lastValid<=LOST_MS;
 
-  // 數字資訊每秒更新約 20 次。
-  if (now - lastHUDTime >= 50) {
-    updateHUD();
-    lastHUDTime = now;
+  for(const r of runners){
+    if(r.player){
+      const l=state==='RUNNING'&&(keys.a||(fresh&&footState.left==='UP')||now-lastStep.left<220);
+      const rr=state==='RUNNING'&&(keys.d||(fresh&&footState.right==='UP')||now-lastStep.right<220);
+      drawRunner(cx+(bots.length?bottom*0.125:0),h-70,1.35,'#176954','你',l?1:0,rr?1:0);
+    }else{
+      const d=r.pos-visualPosition;
+      if(d< -2||d>40) continue;
+      const p=Math.min(1.2,1/(1+d*0.12)),tw=top+(bottom-top)*p;
+      const swing=state==='RUNNING'?Math.sin(now*0.012+r.bot.id):0;
+      drawRunner(
+        cx+r.bot.lane*tw,hy+(h-70-hy)*p,Math.max(0.25,p)*1.2,
+        r.bot.color,r.bot.name,Math.max(0,swing),Math.max(0,-swing)
+      );
+    }
   }
 
-  // 排名不必每個畫面重建，減少介面負擔。
-  if (now - lastRankingTime >= 200) {
-    if (bots.length) fillRanking('ranking-body');
-    lastRankingTime = now;
+  if(state==='READY'){
+    c.fillStyle='#164c3de0';
+    c.fillRect(cx-168,hy-53,336,42);
+    c.fillStyle='#fff';
+    c.textAlign='center';
+    c.font='bold 17px system-ui';
+    c.fillText('點擊「開始遊戲」踏出第一步',cx,hy-26);
+  }
+}
+
+function gameLoop(now){
+  const dt=Math.max(0,(now-lastFrame)/1000);
+  lastFrame=now;
+  if(state==='RUNNING') advanceGame(now);
+  renderTrack(now,Math.min(dt,0.1));
+
+  if(now-lastHUD>=50){
+    updateHUD();
+    lastHUD=now;
+  }
+
+  if(now-lastRanking>=200){
+    if(bots.length) fillRanking('ranking-body');
+    lastRanking=now;
   }
 
   requestAnimationFrame(gameLoop);
 }
 
-// ==================================================
-// 初始化
-// ==================================================
+pc.fillStyle='#e4eee4';
+pc.fillRect(0,0,480,360);
+pc.fillStyle='#5b7868';
+pc.textAlign='center';
+pc.font='17px system-ui';
+pc.fillText('允許鏡頭後顯示動作追蹤',240,170);
+pc.font='14px system-ui';
+pc.fillText('也可以使用 A／D 鍵前進',240,200);
 
-poseCtx.fillStyle = '#e6eee7';
-poseCtx.fillRect(0, 0, 480, 360);
-poseCtx.fillStyle = '#5b7868';
-poseCtx.textAlign = 'center';
-poseCtx.font = '17px system-ui';
-poseCtx.fillText('允許鏡頭後顯示動作追蹤', 240, 170);
-poseCtx.font = '14px system-ui';
-poseCtx.fillText('也可以使用 A／D 鍵抬腳前進', 240, 200);
-
-updateFullscreenButton();
-updateBotControlsUI();
+updateFullscreen();
 updateHUD();
-initCameraDevices();
+initCamera();
 requestAnimationFrame(gameLoop);
 </script>
 </body>
